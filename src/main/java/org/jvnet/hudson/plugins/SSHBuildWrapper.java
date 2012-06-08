@@ -1,5 +1,6 @@
 package org.jvnet.hudson.plugins;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
@@ -57,33 +58,33 @@ public final class SSHBuildWrapper extends BuildWrapper {
 		Environment env = new Environment() {
 			@Override
 			public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
-				if (!executePostBuildScript(listener.getLogger())) {
+				if (!executePostBuildScript(listener.getLogger(), build.getEnvironment(listener))) {
 					return false;
 				}
 				return super.tearDown(build, listener);
 			}
 		};
-		if (executePreBuildScript(listener.getLogger())) {
+		if (executePreBuildScript(listener.getLogger(), build.getEnvironment(listener))) {
 			return env;
 		}
 		// build will fail.
 		return null;
 	}
 
-	private boolean executePreBuildScript(PrintStream logger) {
+	private boolean executePreBuildScript(PrintStream logger , EnvVars envVar) {
 		log(logger, "executing pre build script:\n" + preScript);
 		SSHSite site = getSite();
 		if (preScript != null && !preScript.trim().equals("")) {
-			return site.executeCommand(logger, preScript) == 0;
+			return site.executeCommand(logger, envVar.expand(preScript)) == 0;
 		}
 		return true;
 	}
 
-	private boolean executePostBuildScript(PrintStream logger) {
+	private boolean executePostBuildScript(PrintStream logger, EnvVars envVar) {
 		log(logger, "executing post build script:\n" + postScript);
 		SSHSite site = getSite();
 		if (postScript != null && !postScript.trim().equals("")) {
-			return site.executeCommand(logger, postScript) == 0;
+			return site.executeCommand(logger, envVar.expand(postScript)) == 0;
 		}
 		return true;
 	}

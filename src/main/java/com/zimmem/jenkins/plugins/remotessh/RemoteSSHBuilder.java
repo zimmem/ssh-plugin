@@ -1,5 +1,6 @@
 package com.zimmem.jenkins.plugins.remotessh;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.BuildListener;
@@ -48,8 +49,10 @@ public class RemoteSSHBuilder extends Builder {
                                                                                                 IOException {
         SSHSite site = new SSHSite(hostname, port, username, password);
         if (site != null && command != null && command.trim().length() > 0) {
-            listener.getLogger().printf("executing script:%n%s%n", command);
-            return site.executeCommand(listener.getLogger(), command) == 0;
+            EnvVars env = build.getEnvironment(listener);
+            String renderCommand = env.expand(command);
+            listener.getLogger().printf("executing script:%n%s%n", renderCommand);
+            return site.executeCommand(listener.getLogger(), renderCommand) == 0;
         }
         return true;
     }
